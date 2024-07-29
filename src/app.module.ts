@@ -8,7 +8,6 @@ import { TasksModule } from './common/tasks/tasks.module';
 import { TimeoutInterceptor } from './core/interceptor/timeout.interceptor';
 import { AllExceptionFilter } from './core/filter/all-exception.filter';
 import { TransformInterceptor } from './core/interceptor/transform.interceptor';
-import { LoginModule } from './api/login/login.module';
 import { UserModule } from './api/user/user.module';
 import { AuthModule } from './api/auth/auth.module';
 
@@ -28,7 +27,6 @@ const NODE_ENV = process.env.NODE_ENV ? 'production' : 'development';
     }),
     LogsModule,
     TasksModule,
-    LoginModule,
     UserModule,
     AuthModule,
   ],

@@ -7,6 +7,7 @@ import { User, UserSchema } from '../user/schema/user.schema';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './auth.strategy';
+import { UserModule } from '../user/user.module';
 
 import { jwtConstants } from '@/utils';
 import { RedisModule } from '@/common/redis/redis.module';
@@ -22,13 +23,14 @@ import { EmailModule } from '@/common/email/email.module';
         global: true,
         secret: jwtConstants.secret,
         signOptions: {
-          expiresIn: '30d',
+          expiresIn: '7d',
         },
       }),
     }),
     RedisModule,
     EmailModule,
     HttpModule,
+    UserModule,
   ],
   exports: [AuthService],
 })
