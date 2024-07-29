@@ -33,7 +33,11 @@ export class AuthService {
 
     await this.redisService.set(account, verificationCode, 300);
 
-    this.emailService.sendMail(account, account, verificationCode);
+    try {
+      await this.emailService.sendMail(account, account, verificationCode);
+    } catch (error) {
+      throw new LoginException('发送验证码失败，请稍后再试。');
+    }
 
     return {
       data: {
