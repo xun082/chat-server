@@ -1,7 +1,8 @@
 import { Logger, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 import { LogsModule } from './common/logs/logs.module';
 import { TasksModule } from './common/tasks/tasks.module';
@@ -10,6 +11,8 @@ import { AllExceptionFilter } from './core/filter/all-exception.filter';
 import { TransformInterceptor } from './core/interceptor/transform.interceptor';
 import { UserModule } from './api/user/user.module';
 import { AuthModule } from './api/auth/auth.module';
+import { SocketModule } from './api/socket/socket.module';
+import { JwtAuthGuard } from './core/guard/auth.guard';
 
 import loadDatabaseConfig from '@/config/mongo.config';
 
@@ -25,10 +28,12 @@ const NODE_ENV = process.env.NODE_ENV ? 'production' : 'development';
       inject: [ConfigService],
       useFactory: loadDatabaseConfig,
     }),
+    EventEmitterModule.forRoot(),
     LogsModule,
     TasksModule,
     UserModule,
     AuthModule,
+    SocketModule,
   ],
   controllers: [],
   providers: [

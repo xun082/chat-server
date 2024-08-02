@@ -23,7 +23,7 @@ import { EmailModule } from '@/common/email/email.module';
         global: true,
         secret: jwtConstants.secret,
         signOptions: {
-          expiresIn: '7d',
+          expiresIn: '77d',
         },
       }),
     }),

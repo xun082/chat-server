@@ -21,14 +21,19 @@ export class TransformInterceptor implements NestInterceptor {
           return data;
         }
 
-        // 获取响应状态码
-        const statusCode = response.statusCode;
+        console.log(response.statusCode);
+
+        // 获取响应状态码，如果没有则默认200
+        const statusCode = response.statusCode || 200;
         // 获取对应状态码的标准消息
         const message = getReasonPhrase(statusCode);
 
+        // 设置响应状态码
+        response.status(statusCode);
+
         // 构造标准响应格式
         return {
-          code: response.statusCode,
+          code: statusCode,
           message: data?.message || message,
           data: (data?.data ? data.data : data) ?? null,
           timestamp: getCurrentTimestamp(),

@@ -75,7 +75,7 @@ export class AuthService {
 
     const refreshToken = this.jwtService.sign(
       { sub: user._id.toString(), email: user.email },
-      { expiresIn: '14d' },
+      { expiresIn: '714d' },
     );
 
     return {
@@ -86,5 +86,9 @@ export class AuthService {
       },
       message: '登录成功',
     };
+  }
+
+  jwtVerify(token: string) {
+    return this.jwtService.verify(token);
   }
 }
