@@ -4,6 +4,8 @@ import * as requestIp from '@supercharge/request-ip';
 
 import { LoggerService } from '../../common/logs/logs.service';
 
+import { getCurrentTimestamp } from '@/utils';
+
 interface HttpExceptionResponse {
   statusCode: number;
   message: any;
@@ -54,7 +56,7 @@ export class AllExceptionFilter implements ExceptionFilter {
         params: request.params,
         method: request.method,
         url: request.url,
-        timestamp: new Date().toISOString(),
+        timestamp: getCurrentTimestamp(),
         ip: userIp,
       },
     };

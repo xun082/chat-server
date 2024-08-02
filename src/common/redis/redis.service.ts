@@ -102,4 +102,15 @@ export class RedisService implements OnModuleDestroy {
   public async flushall(): Promise<Result<'OK', ClientContext>> {
     return await this.redisClient.flushall();
   }
+
+  async saveOfflineNotification(userId: string, notification: any): Promise<void> {
+    await this.redisClient.lpush(`offline_notifications:${userId}`, JSON.stringify(notification));
+  }
+
+  async getOfflineNotifications(userId: string): Promise<any[]> {
+    const notifications = await this.redisClient.lrange(`offline_notifications:${userId}`, 0, -1);
+    await this.redisClient.del(`offline_notifications:${userId}`);
+
+    return notifications.map((notification) => JSON.parse(notification));
+  }
 }

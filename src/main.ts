@@ -20,10 +20,10 @@ async function bootstrap() {
   await registerFastifyPlugin(app, fastifyMultipart);
 
   app.enableCors({
-    origin: 'http://127.0.0.1:3000',
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    origin: 'http://localhost:3000',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
-    allowedHeaders: 'Content-Type, Accept',
+    allowedHeaders: 'Content-Type, Accept, Authorization',
   });
 
   app.setGlobalPrefix('api/v1/');
@@ -45,7 +45,7 @@ async function bootstrap() {
     jsonDocumentUrl: 'openApiJson',
   });
 
-  await app.listen(8080);
+  await app.listen(8080, '0.0.0.0');
 }
 
 bootstrap();

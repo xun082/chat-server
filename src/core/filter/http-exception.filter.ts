@@ -4,6 +4,9 @@ import { FastifyReply, FastifyRequest } from 'fastify';
 import { Counter } from 'prom-client';
 import { LoggerService } from 'src/common/logs/logs.service';
 
+import { ErrorResponseDto, RequestDetailsDto } from '@/common/dto/response.dto';
+import { getCurrentTimestamp } from '@/utils';
+
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
   constructor(
@@ -15,7 +18,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
   async catch(exception: HttpException, host: ArgumentsHost): Promise<void> {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<FastifyReply>();
-    const { url, method } = ctx.getRequest<FastifyRequest>();
+    const request = ctx.getRequest<FastifyRequest>();
+    const { url, method } = request;
     const status = exception.getStatus();
 
     // 监控异常
@@ -25,20 +29,31 @@ export class HttpExceptionFilter implements ExceptionFilter {
     this.logger.error(
       {
         message: exception.message,
-        timestamp: new Date().toISOString(),
+        timestamp: getCurrentTimestamp(),
         path: url,
         status,
       },
       'http错误',
     );
 
-    // 发送异常响应
-    response.status(status).send({
-      retcode: status,
+    // 构建错误响应数据
+    const requestDetails: RequestDetailsDto = {
+      query: request.query,
+      body: request.body,
+      params: request.params,
+      method: request.method,
+      url: request.url,
+      timestamp: getCurrentTimestamp(),
+      ip: request.ip,
+    };
+
+    const errorResponse: ErrorResponseDto = {
+      code: status,
       message: exception.message,
-      timestamp: new Date().toISOString(),
-      path: url,
-      data: exception.getResponse(),
-    });
+      data: requestDetails,
+    };
+
+    // 发送异常响应
+    response.status(status).send(errorResponse);
   }
 }

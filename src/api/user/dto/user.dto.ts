@@ -44,7 +44,7 @@ export class UserDto {
   avatar: string;
 
   @ApiProperty({ description: '创建时间', default: getCurrentTimestamp })
-  createdAt: string;
+  createdAt: number;
 
   @ApiProperty({ description: 'GitHub ID', default: 0 })
   githubId: number;
