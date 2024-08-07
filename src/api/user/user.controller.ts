@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Request,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -16,9 +17,11 @@ import {
   CreateFriendRequestDto,
   UpdateFriendRequestStatusDto,
 } from './dto/send-friend-request.dto';
+import { FindUserByEmailDto, UserDto } from './dto/user.dto';
 
 import { RequestWithUser } from '@/common/types';
 import { ResponseDto } from '@/common/dto/response.dto';
+import { ApiResponseWithDto } from '@/core/decorate/api-response.decorator';
 
 @Controller('user')
 @ApiTags('User')
@@ -53,5 +56,21 @@ export class UserController {
     @Body() updateFriendRequestDto: UpdateFriendRequestStatusDto,
   ): Promise<ResponseDto<void>> {
     return this.userService.updateFriendRequestStatus(id, updateFriendRequestDto);
+  }
+
+  @Get('search')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '根据邮箱搜索用户' })
+  @ApiResponseWithDto(UserDto, '获取用户信息', HttpStatus.OK)
+  async searchUserByEmail(
+    @Query() query: FindUserByEmailDto,
+  ): Promise<ResponseDto<UserDto | null>> {
+    const user = await this.userService.findUserByEmail(query);
+
+    return {
+      data: {
+        ...user,
+      },
+    };
   }
 }

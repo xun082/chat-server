@@ -18,7 +18,7 @@ export class User {
   avatar: string;
 
   @Prop({ default: getCurrentTimestamp })
-  createdAt: string;
+  createdAt: number;
 
   @Prop({ default: 0 })
   githubId: number; // 添加 GitHub ID 字段
