@@ -19,7 +19,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('send')
-  @HttpCode(200)
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '发送邮箱验证码' })
   @ApiResponseWithDto(SendVerificationCodeResponseDto, '发送验证码成功', HttpStatus.OK)
   async sendVerificationCode(
@@ -36,7 +36,7 @@ export class AuthController {
   }
 
   @Post('login/email')
-  @HttpCode(200)
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '邮箱验证码登录' })
   @ApiResponseWithDto(LoginResponseDto, '登录成功', HttpStatus.OK)
   async emailLogin(@Body() loginDto: EmailLoginDto): Promise<ResponseDto<LoginResponseDto>> {

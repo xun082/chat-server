@@ -5,7 +5,7 @@ import * as argon2 from 'argon2';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { User, UserDocument } from './schema/user.schema';
-import { FindUserByEmailDto, createUserDto } from './dto/user.dto';
+import { FindUserByEmailDto, UserDto, createUserDto } from './dto/user.dto';
 import {
   CreateFriendRequestDto,
   UpdateFriendRequestStatusDto,
@@ -38,14 +38,16 @@ export class UserService {
     return await this.userModel.findOne({ _id: userId }).select('-password').exec();
   }
 
-  async findUserByEmail(
-    data: FindUserByEmailDto,
-  ): Promise<(User & { _id: Types.ObjectId }) | null> {
+  async findUserByEmail(data: FindUserByEmailDto): Promise<UserDto | null> {
     const { email } = data;
 
-    const result = await this.userModel.findOne({ email }).lean().exec();
+    const result = await this.userModel.findOne({ email }).select('-password -__v').lean().exec();
 
-    return result as (User & { _id: Types.ObjectId }) | null;
+    if (result) {
+      return result as UserDto;
+    }
+
+    return null;
   }
 
   async createUserByEmail(data: createUserDto, isLoginType?: boolean) {
