@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
 
 import { getCurrentTimestamp } from '@/utils';
 
@@ -13,25 +13,25 @@ export enum MessageType {
 @Schema()
 export class ChatHistory {
   @Prop({ required: true })
-  content: string;
+  content: string; // 消息内容
 
-  @Prop({ type: String, ref: 'User', required: true })
-  senderId: string;
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  senderId: Types.ObjectId; // 发送者的用户ID
 
-  @Prop({ type: String, ref: 'User' })
-  receiverId?: string; // 单聊接收者的用户ID
+  @Prop({ type: Types.ObjectId, ref: 'User', default: null })
+  receiverId?: Types.ObjectId | null; // 单聊接收者的用户ID，群聊时为null
 
-  @Prop({ type: String, ref: 'ChatRoom' })
-  chatroomId?: string; // 群聊ID
-
-  @Prop({ default: getCurrentTimestamp })
-  sendTime: number;
+  @Prop({ type: Types.ObjectId, ref: 'ChatRoom', default: null })
+  chatroomId?: Types.ObjectId | null; // 群聊ID，单聊时为null
 
   @Prop({ default: getCurrentTimestamp })
-  updateTime: number;
+  sendTime: number; // 发送时间
 
-  @Prop({ default: false })
-  isRead: boolean;
+  @Prop({ default: getCurrentTimestamp })
+  updateTime: number; // 更新时间
+
+  @Prop({ type: [Types.ObjectId], ref: 'User', default: [] })
+  readBy: Types.ObjectId[]; // 已读用户列表
 
   @Prop({ required: true, enum: MessageType })
   type: MessageType; // 消息类型

@@ -14,14 +14,20 @@ export class User {
   @Prop({ default: '123456789' })
   password: string;
 
-  @Prop({ default: '1c902bf0-df6b-447f-bb9c-a257b014b1f5' })
+  @Prop({ default: 'https://cdn.pixabay.com/photo/2024/07/17/10/25/ocean-8901157_960_720.jpg' })
   avatar: string;
 
   @Prop({ default: getCurrentTimestamp })
   createdAt: number;
 
-  @Prop({ default: 0 })
-  githubId: number; // 添加 GitHub ID 字段
+  @Prop({ default: '未知地区' })
+  region: string;
+
+  @Prop({ default: '暂无签名' })
+  signature: string;
+
+  @Prop({ default: 'https://cdn.pixabay.com/photo/2024/07/17/10/25/ocean-8901157_960_720.jpg' })
+  backgroundImage: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

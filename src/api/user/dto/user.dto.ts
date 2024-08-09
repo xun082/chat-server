@@ -3,8 +3,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { Types } from 'mongoose';
 
-import { getCurrentTimestamp } from '@/utils';
-
 export class FindUserByEmailDto {
   @IsEmail({}, { message: '无效的邮箱地址' })
   @IsNotEmpty({ message: '邮箱地址不能为空' })
@@ -40,14 +38,20 @@ export class UserDto {
   @ApiProperty({ description: '用户名' })
   username: string;
 
-  @ApiProperty({ description: '用户头像', default: '1c902bf0-df6b-447f-bb9c-a257b014b1f5' })
+  @ApiProperty({ description: '用户头像' })
   avatar: string;
 
-  @ApiProperty({ description: '创建时间', default: getCurrentTimestamp })
+  @ApiProperty({ description: '创建时间' })
   createdAt: number;
 
-  @ApiProperty({ description: 'GitHub ID', default: 0 })
-  githubId: number;
+  @ApiProperty({ description: '用户所在地区' })
+  region: string;
+
+  @ApiProperty({ description: '用户签名' })
+  signature: string;
+
+  @ApiProperty({ description: '用户背景图片' })
+  backgroundImage: string;
 
   @ApiProperty({ description: '用户 ID' })
   @Transform(({ value }) => value.toString())
