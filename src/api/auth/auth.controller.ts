@@ -9,7 +9,7 @@ import {
   SendVerificationCodeResponseDto,
 } from './dto/auto.dto';
 
-import { ErrorResponseDto, ResponseDto } from '@/common/dto/response.dto';
+import { ResponseDto } from '@/common/dto/response.dto';
 import { LoginException } from '@/core/exceptions/login.exception';
 import { ApiResponseWithDto } from '@/core/decorate/api-response.decorator';
 

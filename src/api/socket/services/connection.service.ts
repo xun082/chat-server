@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { HttpException } from '@nestjs/common/exceptions/http.exception';
 
@@ -61,7 +61,9 @@ export class ConnectionService {
     }
   }
 
-  async handleDisconnect(client: Socket): Promise<void> {}
+  async handleDisconnect(client: Socket): Promise<void> {
+    console.log(client);
+  }
 
   private disconnect(socket: Socket, error: HttpException) {
     socket.emit('error', error);

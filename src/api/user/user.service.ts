@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Model, Types } from 'mongoose';
+import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import * as argon2 from 'argon2';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -134,15 +134,10 @@ export class UserService {
     return;
   }
 
-  async getPendingRequests(receiverEmail: string): Promise<FriendRequest[]> {
-    return this.friendRequestModel
-      .find({ receiverEmail, status: FriendRequestStatus.PENDING })
-      .exec();
-  }
-
   async getFriendRequests(userId: string): Promise<FriendRequest[]> {
     return this.friendRequestModel
       .find({ $or: [{ senderEmail: userId }, { receiverEmail: userId }] })
+      .lean()
       .exec();
   }
 

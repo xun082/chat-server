@@ -12,10 +12,10 @@ export enum FriendRequestStatus {
 @Schema()
 export class FriendRequest {
   @Prop({ type: Types.ObjectId, required: true })
-  senderId: Types.ObjectId;
+  senderId: Types.ObjectId; // 发起请求的用户ID
 
   @Prop({ type: Types.ObjectId, required: true })
-  receiverId: Types.ObjectId;
+  receiverId: Types.ObjectId; // 接收请求的用户ID
 
   @Prop({
     type: String,
@@ -30,6 +30,9 @@ export class FriendRequest {
 
   @Prop({ type: String, enum: FriendRequestStatus, default: FriendRequestStatus.PENDING })
   status: FriendRequestStatus;
+
+  @Prop({ type: String, default: '' })
+  remark?: string;
 }
 
 export type FriendRequestDocument = FriendRequest & Document;
