@@ -5,7 +5,7 @@ import * as argon2 from 'argon2';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { User, UserDocument } from './schema/user.schema';
-import { FindUserByEmailDto, UserDto, createUserDto } from './dto/user.dto';
+import { FindUserByEmailDto, UpdateUserDto, UserDto, createUserDto } from './dto/user.dto';
 import {
   CreateFriendRequestDto,
   UpdateFriendRequestStatusDto,
@@ -34,17 +34,25 @@ export class UserService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async getUserInfo(userId: string) {
-    return await this.userModel.findOne({ _id: userId }).select('-password').exec();
+  async getUserInfo(userId: string): Promise<ResponseDto<UserDto>> {
+    const data = (await this.userModel
+      .findOne({ _id: userId })
+      .select('-password')
+      .lean()
+      .exec()) as ResponseDto<UserDto>;
+
+    return data;
   }
 
-  async findUserByEmail(data: FindUserByEmailDto): Promise<UserDto | null> {
-    const { email } = data;
+  async findUserByEmail({ email }: FindUserByEmailDto): Promise<ResponseDto<UserDto | null>> {
+    const data = (await this.userModel
+      .findOne({ email })
+      .select('-password')
+      .lean()
+      .exec()) as ResponseDto<UserDto>;
 
-    const result = await this.userModel.findOne({ email }).select('-password -__v').lean().exec();
-
-    if (result) {
-      return result as UserDto;
+    if (data) {
+      return data;
     }
 
     return null;
@@ -173,6 +181,23 @@ export class UserService {
     await friend.save();
 
     this.eventEmitter.emit(SocketKeys.FRIEND_REQUEST_UPDATED, new FriendRequestEvent());
+
+    return;
+  }
+
+  // 修改用户信息
+  async updateUserInfo(userId: string, updateUserDto: UpdateUserDto): Promise<void> {
+    const updatedUser = await this.userModel
+      .findByIdAndUpdate(
+        userId,
+        { $set: updateUserDto }, // 使用 $set 只更新传递的字段
+        { new: true, runValidators: true }, // new: true 返回更新后的文档，runValidators: true 运行更新的验证器
+      )
+      .exec();
+
+    if (!updatedUser) {
+      throw new ValidationException('User not found');
+    }
 
     return;
   }
