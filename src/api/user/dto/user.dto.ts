@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, ValidateIf } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { Types } from 'mongoose';
@@ -67,4 +67,30 @@ export class GitHubAccessToken {
 
   @ApiProperty({ description: '用户头像', default: '1c902bf0-df6b-447f-bb9c-a257b014b1f5' })
   scope: string;
+}
+
+export class UpdateUserDto {
+  @ApiProperty({ description: '用户名，可选' })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  username?: string;
+
+  @ApiProperty({ description: '地区，可选' })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  region?: string;
+
+  @ApiProperty({ description: '个性签名，可选' })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  signature?: string;
+
+  @ApiProperty({ description: '背景图片链接，可选' })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  backgroundImage?: string;
 }

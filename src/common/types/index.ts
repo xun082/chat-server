@@ -13,8 +13,14 @@ export interface SmsCodeType {
   BizId: string;
 }
 
+export interface JwtPayload {
+  _id: string;
+  username: string;
+  email: string;
+}
+
 export interface RequestWithUser extends Request {
-  user: User;
+  user: JwtPayload;
 }
 
 export type ObjectType = Record<string, any>;

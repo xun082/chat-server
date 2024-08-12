@@ -9,15 +9,17 @@ import {
   Post,
   Query,
   Request,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 
 import { UserService } from './user.service';
 import {
   CreateFriendRequestDto,
   UpdateFriendRequestStatusDto,
 } from './dto/send-friend-request.dto';
-import { FindUserByEmailDto, UserDto } from './dto/user.dto';
+import { FindUserByEmailDto, UpdateUserDto, UserDto } from './dto/user.dto';
 
 import { RequestWithUser } from '@/common/types';
 import { ResponseDto } from '@/common/dto/response.dto';
@@ -25,13 +27,15 @@ import { ApiResponseWithDto } from '@/core/decorate/api-response.decorator';
 
 @Controller('user')
 @ApiTags('User')
+@UseGuards(AuthGuard('jwt'))
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
-  @ApiOperation({ summary: '获取用户信息' })
-  getUserInfo(@Request() req: RequestWithUser) {
-    return this.userService.getUserInfo(req.user.username);
+  @ApiOperation({ summary: '获取登录用户信息' })
+  @ApiResponseWithDto(UserDto, '获取登录用户信息', HttpStatus.OK)
+  async getUserInfo(@Request() req: RequestWithUser): Promise<ResponseDto<UserDto>> {
+    return await this.userService.getUserInfo(req.user._id);
   }
 
   @Post('friend/request')
@@ -46,7 +50,7 @@ export class UserController {
   @Get('friend/requests')
   @ApiOperation({ summary: '获取好友请求' })
   async getFriendRequests(@Request() req: RequestWithUser) {
-    return this.userService.getFriendRequests(req.user.email);
+    return await this.userService.getFriendRequests(req.user.email);
   }
 
   @Patch('friend/requests/:id')
@@ -55,7 +59,7 @@ export class UserController {
     @Param('id') id: string,
     @Body() updateFriendRequestDto: UpdateFriendRequestStatusDto,
   ): Promise<ResponseDto<void>> {
-    return this.userService.updateFriendRequestStatus(id, updateFriendRequestDto);
+    return await this.userService.updateFriendRequestStatus(id, updateFriendRequestDto);
   }
 
   @Get('search')
@@ -65,12 +69,14 @@ export class UserController {
   async searchUserByEmail(
     @Query() query: FindUserByEmailDto,
   ): Promise<ResponseDto<UserDto | null>> {
-    const user = await this.userService.findUserByEmail(query);
+    return await this.userService.findUserByEmail(query);
+  }
 
-    return {
-      data: {
-        ...user,
-      },
-    };
+  @Patch('update')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '修改用户信息' })
+  @ApiResponseWithDto(UpdateUserDto, '修改用户信息', HttpStatus.OK)
+  async updateUserInfo(@Request() req: RequestWithUser, @Body() updateUserDto: UpdateUserDto) {
+    return await this.userService.updateUserInfo(req.user._id, updateUserDto);
   }
 }
