@@ -31,4 +31,4 @@ export class ChatGroup {
 }
 
 export const ChatGroupSchema = SchemaFactory.createForClass(ChatGroup);
-export type ChatGroupSchema = HydratedDocument<ChatGroup>;
+export type ChatGroupDocument = HydratedDocument<ChatGroup>;

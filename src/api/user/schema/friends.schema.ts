@@ -1,22 +1,28 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, Types, Schema as MongooseSchema } from 'mongoose';
 
 import { getCurrentTimestamp } from '@/utils';
 
 @Schema()
 export class Friends {
-  @Prop({ type: Types.ObjectId, required: true })
-  user_id: Types.ObjectId; // 当前用户的ID
+  @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: 'User' })
+  userId: Types.ObjectId; // 当前用户的ID
 
-  @Prop({ type: Types.ObjectId, required: true })
-  friend_id: Types.ObjectId; // 好友的用户ID
+  @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: 'User' })
+  friendId: Types.ObjectId; // 好友的用户ID
 
   @Prop({ default: getCurrentTimestamp })
-  createAt: number;
+  createdAt: number;
 
   @Prop({ default: '' })
-  remark: string; // 用户对好友的备注名
+  userRemark: string; // userId 对 friendId 的备注名
+
+  @Prop({ default: '' })
+  friendRemark: string; // friendId 对 userId 的备注名
 }
 
 export const FriendsSchema = SchemaFactory.createForClass(Friends);
 export type FriendsDocument = HydratedDocument<Friends>;
+
+// 添加唯一性索引，确保同一对用户只能有一条好友关系
+FriendsSchema.index({ userId: 1, friendId: 1 }, { unique: true });

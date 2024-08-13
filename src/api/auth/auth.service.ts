@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { Model } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
 
 import {
   EmailLoginDto,
@@ -8,6 +10,7 @@ import {
   SendVerificationCodeResponseDto,
 } from './dto/auto.dto';
 import { UserService } from '../user/user.service';
+import { UserDocument, User } from '../user/schema/user.schema';
 
 import { RedisService } from '@/common/redis/redis.service';
 import { EmailService } from '@/common/email/email.service';
@@ -23,6 +26,7 @@ export class AuthService {
     private readonly emailService: EmailService,
     private readonly userService: UserService,
     private jwtService: JwtService,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) {}
 
   async sendVerificationCode(
@@ -59,13 +63,19 @@ export class AuthService {
     }
 
     const password = generateDefaultPassword();
-    const userResult = await this.userService.findUserByEmail({ email: email });
+    const userResult = await this.userModel
+      .findOne({ email: email })
+      .select('_id email username')
+      .lean()
+      .exec();
+
+    console.log(userResult, 2222);
 
     const user: JwtPayload =
       {
-        _id: userResult?.data._id.toString(),
-        email: userResult?.data.email,
-        username: userResult?.data.username,
+        _id: userResult?._id.toString(),
+        email: userResult?.email,
+        username: userResult?.username,
       } ??
       (await (async () => {
         const newUser = await this.userService.createUserByEmail(

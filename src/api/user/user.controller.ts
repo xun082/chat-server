@@ -17,6 +17,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { UserService } from './user.service';
 import {
   CreateFriendRequestDto,
+  FriendRequestDto,
   UpdateFriendRequestStatusDto,
 } from './dto/send-friend-request.dto';
 import { FindUserByEmailDto, UpdateUserDto, UserDto } from './dto/user.dto';
@@ -42,15 +43,18 @@ export class UserController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: '发送好友请求' })
   async sendFriendRequest(
+    @Request() req: RequestWithUser,
     @Body() sendFriendRequestDto: CreateFriendRequestDto,
   ): Promise<ResponseDto<void>> {
-    return await this.userService.sendFriendRequest(sendFriendRequestDto);
+    return await this.userService.sendFriendRequest(req.user._id, sendFriendRequestDto);
   }
 
   @Get('friend/requests')
   @ApiOperation({ summary: '获取好友请求' })
-  async getFriendRequests(@Request() req: RequestWithUser) {
-    return await this.userService.getFriendRequests(req.user.email);
+  async getFriendRequests(
+    @Request() req: RequestWithUser,
+  ): Promise<ResponseDto<FriendRequestDto[]>> {
+    return await this.userService.getFriendRequests(req.user._id);
   }
 
   @Patch('friend/requests/:id')
