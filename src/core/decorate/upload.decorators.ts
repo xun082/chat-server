@@ -8,6 +8,16 @@ export default function ApiFileUploadDecorate(description: string, single: boole
     ApiResponse({
       status: HttpStatus.OK,
       description: '文件上传成功，返回文件信息。',
+      schema: {
+        type: 'object',
+        properties: {
+          url: { type: 'string', description: '上传成功后的文件URL' },
+          urls: {
+            type: 'array',
+            items: { type: 'string', description: '上传成功后的文件URL数组' },
+          },
+        },
+      },
     }),
     ApiResponse({
       status: HttpStatus.BAD_REQUEST,
@@ -21,7 +31,6 @@ export default function ApiFileUploadDecorate(description: string, single: boole
     ApiBody({
       description: `${single ? '单个' : '多个'}文件上传`,
       required: true,
-      type: 'multipart/form-data',
       schema: {
         type: 'object',
         properties: {
@@ -31,6 +40,16 @@ export default function ApiFileUploadDecorate(description: string, single: boole
             format: single ? 'binary' : undefined,
             description: `要上传的${single ? '文件' : '文件数组'}`,
           },
+          bucketName: {
+            type: 'string',
+            description: '存储桶名称',
+          },
+          fileName: single
+            ? {
+                type: 'string',
+                description: '文件名称',
+              }
+            : undefined,
         },
       },
     }),

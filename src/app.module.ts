@@ -12,6 +12,7 @@ import { TransformInterceptor } from './core/interceptor/transform.interceptor';
 import { UserModule } from './api/user/user.module';
 import { AuthModule } from './api/auth/auth.module';
 import { SocketModule } from './api/socket/socket.module';
+import { UploadModule } from './api/upload/upload.module';
 
 import loadDatabaseConfig from '@/config/mongo.config';
 
@@ -33,6 +34,7 @@ const NODE_ENV = process.env.NODE_ENV ? 'production' : 'development';
     UserModule,
     AuthModule,
     SocketModule,
+    UploadModule,
   ],
   controllers: [],
   providers: [
