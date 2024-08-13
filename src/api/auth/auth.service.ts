@@ -14,6 +14,7 @@ import { EmailService } from '@/common/email/email.service';
 import { ResponseDto } from '@/common/dto/response.dto';
 import { LoginException } from '@/core/exceptions/login.exception';
 import { generateDefaultPassword, generateVerificationCode } from '@/utils';
+import { JwtPayload } from '@/common/types';
 
 @Injectable()
 export class AuthService {
@@ -58,21 +59,38 @@ export class AuthService {
     }
 
     const password = generateDefaultPassword();
+    const userResult = await this.userService.findUserByEmail({ email: email });
 
-    const user =
-      (await this.userService.findUserByEmail({ email })) ??
-      (await this.userService.createUserByEmail(
-        {
-          email,
-          code: captcha,
-          confirm_password: password,
-          password: password,
-        },
-        true,
-      ));
+    const user: JwtPayload =
+      {
+        _id: userResult?.data._id.toString(),
+        email: userResult?.data.email,
+        username: userResult?.data.username,
+      } ??
+      (await (async () => {
+        const newUser = await this.userService.createUserByEmail(
+          {
+            email,
+            code: captcha,
+            confirm_password: password,
+            password: password,
+          },
+          true,
+        );
 
+        return {
+          _id: newUser._id.toString(),
+          email: newUser.email,
+          username: newUser.username,
+        };
+      })());
+
+    if (!user || !user.email) {
+      throw new Error('用户创建或查找失败');
+    }
+
+    // 2. 生成token时确保user.email存在
     const accessToken = this.jwtService.sign({ sub: user._id.toString(), email: user.email });
-
     const refreshToken = this.jwtService.sign(
       { sub: user._id.toString(), email: user.email },
       { expiresIn: '714d' },

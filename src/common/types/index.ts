@@ -1,5 +1,4 @@
 import { Request } from '@nestjs/common';
-import { User } from 'src/api/user/schema/user.schema';
 
 export interface ResponseModel<T> {
   code: number;
