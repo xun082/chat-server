@@ -8,6 +8,7 @@ import {
   MinLength,
   MaxLength,
   IsNumber,
+  IsIn,
 } from 'class-validator';
 import { Types } from 'mongoose';
 
@@ -28,8 +29,16 @@ export class CreateFriendRequestDto {
 }
 
 export class UpdateFriendRequestStatusDto {
-  @IsEnum(FriendRequestStatus, { message: 'Invalid status' })
+  @IsNotEmpty({ message: 'Status is required and cannot be empty' })
+  @IsIn([FriendRequestStatus.ACCEPTED, FriendRequestStatus.REJECTED], {
+    message: `Status must be one of the following: ${FriendRequestStatus.ACCEPTED}, ${FriendRequestStatus.REJECTED}`,
+  })
   status: FriendRequestStatus;
+
+  @IsOptional()
+  @IsString({ message: 'Remark must be a string' })
+  @MaxLength(500, { message: 'Remark must be at most 500 characters long' })
+  remark?: string; // 可选的备注字段
 }
 
 export class FriendRequestDto {
