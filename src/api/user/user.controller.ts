@@ -21,6 +21,7 @@ import {
   UpdateFriendRequestStatusDto,
 } from './dto/send-friend-request.dto';
 import { FindUserByEmailDto, UpdateUserDto, UserDto } from './dto/user.dto';
+import { FriendDetailsDto } from './dto/friend';
 
 import { RequestWithUser } from '@/common/types';
 import { ResponseDto } from '@/common/dto/response.dto';
@@ -55,6 +56,17 @@ export class UserController {
     @Request() req: RequestWithUser,
   ): Promise<ResponseDto<FriendRequestDto[]>> {
     return await this.userService.getFriendRequests(req.user._id);
+  }
+
+  @Get('friends')
+  @ApiOperation({ summary: '获取好友列表' })
+  @ApiResponseWithDto([FriendDetailsDto], '获取好友列表', HttpStatus.OK)
+  async getFriendsList(@Request() req: RequestWithUser): Promise<ResponseDto<FriendDetailsDto[]>> {
+    const data = await this.userService.getFriendsList(req.user._id);
+
+    return {
+      data: data.data.length > 0 ? data.data : null,
+    };
   }
 
   @Patch('friend/requests/:id')

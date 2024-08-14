@@ -14,6 +14,7 @@ import {
 } from './dto/send-friend-request.dto';
 import { FriendRequest, FriendRequestDocument } from './schema/friend-request.schema';
 import { Friends, FriendsDocument } from './schema/friends.schema';
+import { FriendDetailsDto } from './dto/friend';
 
 import { FriendRequestEvent } from '@/core/events/friend-request.events';
 import { RedisService } from '@/common/redis/redis.service';
@@ -183,6 +184,51 @@ export class UserService {
     return { data: result };
   }
 
+  async getFriendsList(userId: string): Promise<ResponseDto<FriendDetailsDto[]>> {
+    // Step 1: 获取好友关系数据
+    const friends = await this.friendModel
+      .find({ user_id: userId })
+      .select('friend_id createdAt friendRemark')
+      .lean()
+      .exec();
+
+    // Step 2: 提取所有 friend_id
+    const friendIds = friends.map((friend) => friend.friend_id);
+
+    // Step 3: 查找 friend_id 对应的用户详细信息
+    const users = await this.userModel
+      .find({ _id: { $in: friendIds } })
+      .select('email username avatar')
+      .lean()
+      .exec();
+
+    // Step 4: 创建一个用户信息映射表
+    const userMap = new Map(users.map((user) => [user._id.toString(), user]));
+
+    // Step 5: 组合好友记录和用户详细信息
+    const result = friends
+      .map((friend) => {
+        const user = userMap.get(friend.friend_id.toString());
+
+        if (user) {
+          return {
+            id: friend._id.toString(), // 将 ObjectId 转换为字符串
+            friendId: friend.friend_id.toString(), // 将 ObjectId 转换为字符串
+            friendEmail: user.email,
+            friendUsername: user.username,
+            friendRemark: friend.friendRemark,
+            createdAt: friend.createdAt,
+            avatar: user.avatar,
+          };
+        }
+
+        return null;
+      })
+      .filter((friend) => friend !== null); // 过滤掉 null 项
+
+    return { data: result };
+  }
+
   // 通过好友验证
   async updateFriendRequestStatus(
     requestId: string,
@@ -200,15 +246,6 @@ export class UserService {
     if (friendRequest.status !== FriendRequestStatus.PENDING) {
       throw new ValidationException('Friend request is not pending');
     }
-
-    // 更新申请请求
-    await this.friendRequestModel.findOneAndUpdate(
-      { senderId: requestId },
-      updateFriendRequestDto,
-      {
-        new: true,
-      },
-    );
 
     const friend = new this.friendModel({
       user_id: requestId,
