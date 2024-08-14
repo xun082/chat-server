@@ -3,13 +3,17 @@ import { ApiExtraModels, ApiResponse, getSchemaPath } from '@nestjs/swagger';
 
 import { ResponseDto } from '@/common/dto/response.dto';
 
+type ModelType = Type<any> | [Type<any>];
+
 export function ApiResponseWithDto(
-  model: Type<any>,
+  model: ModelType,
   description: string = 'Operation successful',
   status: number = 200,
 ) {
+  const isArray = Array.isArray(model);
+
   return applyDecorators(
-    ApiExtraModels(ResponseDto, model),
+    ApiExtraModels(ResponseDto, ...(isArray ? model : [model])),
     ApiResponse({
       status,
       description,
@@ -18,7 +22,9 @@ export function ApiResponseWithDto(
           { $ref: getSchemaPath(ResponseDto) },
           {
             properties: {
-              data: { $ref: getSchemaPath(model) },
+              data: isArray
+                ? { type: 'array', items: { $ref: getSchemaPath((model as [Type<any>])[0]) } }
+                : { $ref: getSchemaPath(model as Type<any>) },
             },
           },
         ],
