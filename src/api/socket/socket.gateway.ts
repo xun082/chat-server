@@ -64,15 +64,15 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @OnEvent(SocketKeys.FRIEND_REQUEST_CREATED)
   async handleFriendRequestEvent(event: FriendRequestEvent) {
-    const receiverSocket = this.clients.get(event.receiverEmail);
+    const receiverSocket = this.clients.get(event.receiverId.toHexString());
 
     if (receiverSocket) {
       receiverSocket.emit('notification', { type: 'friendRequest', data: event });
     } else {
       const createOfflineNotificationDto: CreateOfflineNotificationDto = {
-        receiverId: event.receiverEmail,
+        receiverId: event.receiverId,
         message: {
-          senderId: event.senderEmail,
+          senderId: event.senderId,
           content: 'You have a new friend request',
           type: NotificationType.FRIEND_REQUEST,
           createdAt: new Date().toISOString(),
@@ -84,35 +84,6 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @OnEvent(SocketKeys.FRIEND_REQUEST_UPDATED)
   async handleFriendRequestUpdatedEvent(event: FriendRequestEvent) {
-    const senderSocket = this.clients.get(event.senderEmail);
-    const receiverSocket = this.clients.get(event.receiverEmail);
-
-    // 通知发送逻辑
-    const notifyClient = (socket, data) => {
-      if (socket) {
-        socket.emit('notification', data);
-      }
-    };
-
-    const notification = { type: 'friendRequestUpdated', data: event };
-
-    // 通知发送者
-    notifyClient(senderSocket, notification);
-
-    // 通知接收者或保存离线通知
-    if (receiverSocket) {
-      notifyClient(receiverSocket, notification);
-    } else {
-      const createOfflineNotificationDto: CreateOfflineNotificationDto = {
-        receiverId: event.receiverEmail,
-        message: {
-          senderId: event.senderEmail,
-          content: 'Your friend request has been updated',
-          type: NotificationType.FRIEND_REQUEST_UPDATED,
-          createdAt: new Date().toISOString(),
-        },
-      };
-      await this.offlineNotificationService.saveOfflineNotification(createOfflineNotificationDto);
-    }
+    await this.chatService.processFriendRequestUpdate(event, this.clients);
   }
 }

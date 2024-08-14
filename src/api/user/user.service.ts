@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import * as argon2 from 'argon2';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -140,7 +140,14 @@ export class UserService {
       existingRequest.createdAt = getCurrentTimestamp();
       await existingRequest.save();
 
-      this.eventEmitter.emit(SocketKeys.FRIEND_REQUEST_UPDATED, new FriendRequestEvent());
+      this.eventEmitter.emit(
+        SocketKeys.FRIEND_REQUEST_UPDATED,
+        new FriendRequestEvent({
+          senderId: new Types.ObjectId(senderId),
+          receiverId: new Types.ObjectId(receiverId),
+          description: '请求添加好友',
+        }),
+      );
     } else {
       // 创建新的好友请求
       const friendRequest = new this.friendRequestModel({
@@ -149,7 +156,14 @@ export class UserService {
       });
       await friendRequest.save();
 
-      this.eventEmitter.emit(SocketKeys.FRIEND_REQUEST_CREATED, new FriendRequestEvent());
+      this.eventEmitter.emit(
+        SocketKeys.FRIEND_REQUEST_CREATED,
+        new FriendRequestEvent({
+          senderId: new Types.ObjectId(senderId),
+          receiverId: new Types.ObjectId(receiverId),
+          description: '请求添加好友',
+        }),
+      );
     }
 
     return;
@@ -176,6 +190,8 @@ export class UserService {
   ): Promise<ResponseDto<void>> {
     const friendRequest = await this.friendRequestModel.findOne({ senderId: requestId }).exec();
 
+    console.log(friendRequest);
+
     if (!friendRequest) {
       throw new ValidationException('Friend request not found');
     }
@@ -185,6 +201,7 @@ export class UserService {
       throw new ValidationException('Friend request is not pending');
     }
 
+    // 更新申请请求
     await this.friendRequestModel.findOneAndUpdate(
       { senderId: requestId },
       updateFriendRequestDto,
@@ -196,11 +213,20 @@ export class UserService {
     const friend = new this.friendModel({
       user_id: requestId,
       friend_id: friendRequest.receiverId,
+      userRemark: friendRequest.remark,
+      friendRemark: updateFriendRequestDto.remark,
     });
 
     await friend.save();
 
-    this.eventEmitter.emit(SocketKeys.FRIEND_REQUEST_UPDATED, new FriendRequestEvent());
+    this.eventEmitter.emit(
+      SocketKeys.FRIEND_REQUEST_UPDATED,
+      new FriendRequestEvent({
+        senderId: new Types.ObjectId(requestId),
+        receiverId: friendRequest.id,
+        description: '我已经通过好友了，我们可以开始交流了',
+      }),
+    );
 
     return;
   }

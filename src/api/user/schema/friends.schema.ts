@@ -6,10 +6,10 @@ import { getCurrentTimestamp } from '@/utils';
 @Schema()
 export class Friends {
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: 'User' })
-  userId: Types.ObjectId; // 当前用户的ID
+  user_id: Types.ObjectId; // 当前用户的ID
 
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: 'User' })
-  friendId: Types.ObjectId; // 好友的用户ID
+  friend_id: Types.ObjectId; // 好友的用户ID
 
   @Prop({ default: getCurrentTimestamp })
   createdAt: number;
