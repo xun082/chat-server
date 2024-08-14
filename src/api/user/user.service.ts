@@ -3,19 +3,17 @@ import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import * as argon2 from 'argon2';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { plainToInstance } from 'class-transformer';
 
 import { User, UserDocument } from './schema/user.schema';
 import { FindUserByEmailDto, UpdateUserDto, UserDto, createUserDto } from './dto/user.dto';
 import {
   CreateFriendRequestDto,
+  FriendRequestDto,
   UpdateFriendRequestStatusDto,
 } from './dto/send-friend-request.dto';
-import {
-  FriendRequest,
-  FriendRequestDocument,
-  FriendRequestStatus,
-} from './schema/friend-request.schema';
-import { FriendsDocument } from './schema/friends.schema';
+import { FriendRequest, FriendRequestDocument } from './schema/friend-request.schema';
+import { Friends, FriendsDocument } from './schema/friends.schema';
 
 import { FriendRequestEvent } from '@/core/events/friend-request.events';
 import { RedisService } from '@/common/redis/redis.service';
@@ -23,13 +21,14 @@ import { ValidationException } from '@/core/exceptions/validation.exception';
 import { ResponseDto } from '@/common/dto/response.dto';
 import { SocketKeys } from '@/common/enum/socket';
 import { getCurrentTimestamp } from '@/utils';
+import { FriendRequestStatus } from '@/common/types';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(FriendRequest.name) private friendRequestModel: Model<FriendRequestDocument>,
-    @InjectModel(User.name) private friendModel: Model<FriendsDocument>,
+    @InjectModel(Friends.name) private friendModel: Model<FriendsDocument>,
     private readonly redisService: RedisService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
@@ -102,18 +101,29 @@ export class UserService {
     return user;
   }
 
+  // 发送好友申请
   async sendFriendRequest(
+    senderId: string,
     createFriendRequestDto: CreateFriendRequestDto,
   ): Promise<ResponseDto<void>> {
-    const { senderId, receiverId } = createFriendRequestDto;
+    console.log(senderId);
+
+    const { receiverId } = createFriendRequestDto;
+
+    // 检查要申请的用户是否存在
+    const senderExists = await this.userModel.exists({ _id: receiverId });
+
+    if (!senderExists) {
+      throw new ValidationException('申请的用户不存在');
+    }
 
     // 检查发送者和接收者是否已经是好友
-    const sender = await this.friendModel
+    const existingFriendship = await this.friendModel
       .findOne({ user_id: senderId, friend_id: receiverId })
       .exec();
 
-    if (!sender) {
-      throw new ValidationException('Sender or Receiver not found');
+    if (existingFriendship) {
+      throw new ValidationException('You are already friends with this user');
     }
 
     // 检查是否已经存在未处理的好友请求
@@ -133,7 +143,10 @@ export class UserService {
       this.eventEmitter.emit(SocketKeys.FRIEND_REQUEST_UPDATED, new FriendRequestEvent());
     } else {
       // 创建新的好友请求
-      const friendRequest = new this.friendRequestModel(createFriendRequestDto);
+      const friendRequest = new this.friendRequestModel({
+        senderId: senderId,
+        ...createFriendRequestDto,
+      });
       await friendRequest.save();
 
       this.eventEmitter.emit(SocketKeys.FRIEND_REQUEST_CREATED, new FriendRequestEvent());
@@ -142,11 +155,18 @@ export class UserService {
     return;
   }
 
-  async getFriendRequests(userId: string): Promise<FriendRequest[]> {
-    return this.friendRequestModel
-      .find({ $or: [{ senderEmail: userId }, { receiverEmail: userId }] })
+  async getFriendRequests(userId: string): Promise<ResponseDto<FriendRequestDto[]>> {
+    const data = await this.friendRequestModel
+      .find({ $or: [{ senderId: userId }, { receiverId: userId }] })
+      .select('-__v')
       .lean()
       .exec();
+
+    const result = plainToInstance(FriendRequestDto, data, {
+      enableImplicitConversion: true,
+    });
+
+    return { data: result };
   }
 
   // 通过好友验证

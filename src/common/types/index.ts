@@ -23,3 +23,9 @@ export interface RequestWithUser extends Request {
 }
 
 export type ObjectType = Record<string, any>;
+
+export enum FriendRequestStatus {
+  PENDING = 'pending',
+  ACCEPTED = 'accepted',
+  REJECTED = 'rejected',
+}

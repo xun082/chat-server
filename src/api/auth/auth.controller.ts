@@ -43,6 +43,8 @@ export class AuthController {
     try {
       return await this.authService.emailLogin(loginDto);
     } catch (error) {
+      console.log(error);
+
       if (error instanceof LoginException) {
         throw new HttpException(
           { statusCode: HttpStatus.UNAUTHORIZED, message: error.message, data: null },

@@ -2,12 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
 import { getCurrentTimestamp } from '@/utils';
-
-export enum FriendRequestStatus {
-  PENDING = 'pending',
-  ACCEPTED = 'accepted',
-  REJECTED = 'rejected',
-}
+import { FriendRequestStatus } from '@/common/types';
 
 @Schema()
 export class FriendRequest {
