@@ -36,8 +36,13 @@ export class UserController {
   @Get()
   @ApiOperation({ summary: '获取登录用户信息' })
   @ApiResponseWithDto(UserDto, '获取登录用户信息', HttpStatus.OK)
-  async getUserInfo(@Request() req: RequestWithUser): Promise<ResponseDto<UserDto>> {
-    return await this.userService.getUserInfo(req.user._id);
+  async getUserInfo(
+    @Request() req: RequestWithUser,
+    @Query('userId') userId?: string,
+  ): Promise<ResponseDto<UserDto>> {
+    const targetUserId = userId || req.user._id;
+
+    return await this.userService.getUserInfo(targetUserId);
   }
 
   @Post('friend/request')
