@@ -39,17 +39,30 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private clients: Map<string, Socket> = new Map();
 
+  // 心跳检测配置
+  private readonly HEARTBEAT_INTERVAL = 10000; // 心跳间隔时间（毫秒）
+  private readonly HEARTBEAT_TIMEOUT = 30000; // 心跳超时时间（毫秒）
+
   constructor(
     private readonly chatService: ChatService,
     private readonly connectionService: ConnectionService,
     private readonly offlineNotificationService: OfflineNotificationService,
-  ) {}
+  ) {
+    // 定期检查心跳状态
+    setInterval(() => {
+      this.checkHeartbeat();
+    }, this.HEARTBEAT_INTERVAL);
+  }
 
   async handleConnection(client: Socket) {
     await this.connectionService.handleConnection(client);
+    // 初始化客户端的心跳数据
+    client.data.lastHeartbeat = Date.now();
+    this.clients.set(client.id, client);
   }
 
   async handleDisconnect(client: Socket): Promise<void> {
+    this.clients.delete(client.id);
     await this.connectionService.handleDisconnect(client);
   }
 
@@ -85,5 +98,25 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @OnEvent(SocketKeys.FRIEND_REQUEST_UPDATED)
   async handleFriendRequestUpdatedEvent(event: FriendRequestEvent) {
     await this.chatService.processFriendRequestUpdate(event, this.clients);
+  }
+
+  // 处理心跳消息
+  @SubscribeMessage(SocketKeys.HEARTBEAT)
+  handleHeartbeat(@ConnectedSocket() socket: Socket) {
+    // 更新客户端的最后心跳时间
+    socket.data.lastHeartbeat = Date.now();
+  }
+
+  // 检查心跳状态
+  private checkHeartbeat() {
+    const now = Date.now();
+
+    this.clients.forEach((socket, clientId) => {
+      if (now - socket.data.lastHeartbeat > this.HEARTBEAT_TIMEOUT) {
+        // 如果超时没有收到心跳，断开连接
+        socket.disconnect(true);
+        this.clients.delete(clientId);
+      }
+    });
   }
 }
