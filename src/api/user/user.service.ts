@@ -6,7 +6,13 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { plainToInstance } from 'class-transformer';
 
 import { User, UserDocument } from './schema/user.schema';
-import { FindUserByEmailDto, UpdateUserDto, UserDto, createUserDto } from './dto/user.dto';
+import {
+  FindUserByEmailDto,
+  UpdateUserDto,
+  UserDto,
+  UserWithFriendStatusDto,
+  createUserDto,
+} from './dto/user.dto';
 import {
   CreateFriendRequestDto,
   FriendRequestDto,
@@ -34,14 +40,43 @@ export class UserService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async getUserInfo(userId: string): Promise<ResponseDto<UserDto>> {
-    const data = (await this.userModel
-      .findOne({ _id: userId })
+  async getUserInfo(currentUserId: string, userId?: string): Promise<UserWithFriendStatusDto> {
+    // 如果 userId 是 undefined，则使用 currentUserId
+    const targetUserId = userId || currentUserId;
+
+    // 获取用户信息
+    const user = await this.userModel
+      .findOne({ _id: targetUserId })
       .select('-password')
       .lean()
-      .exec()) as ResponseDto<UserDto>;
+      .exec();
 
-    return data;
+    // 检查是否为好友
+    const isFriend =
+      targetUserId === currentUserId
+        ? true // 如果查询的是自己的信息，直接设置为 true
+        : await this.areUsersFriends(currentUserId, targetUserId);
+
+    // 返回组合后的数据
+    return {
+      ...user,
+      isFriend,
+    };
+  }
+
+  async areUsersFriends(userId1: string, userId2: string): Promise<boolean> {
+    const friendship = await this.friendModel
+      .findOne({
+        $or: [
+          { user_id: userId1, friend_id: userId2 },
+          { user_id: userId2, friend_id: userId1 },
+        ],
+      })
+      .exec();
+
+    console.log(friendship);
+
+    return !!friendship;
   }
 
   async findUserByEmail({ email }: FindUserByEmailDto): Promise<ResponseDto<UserDto | null>> {
@@ -185,15 +220,19 @@ export class UserService {
   }
 
   async getFriendsList(userId: string): Promise<ResponseDto<FriendDetailsDto[]>> {
-    // Step 1: 获取好友关系数据
+    // Step 1: 获取好友关系数据，包括 user_id 或 friend_id 为当前用户的关系
     const friends = await this.friendModel
-      .find({ user_id: userId })
-      .select('friend_id createdAt friendRemark')
+      .find({
+        $or: [{ user_id: userId }, { friend_id: userId }],
+      })
+      .select('user_id friend_id createdAt userRemark friendRemark')
       .lean()
       .exec();
 
-    // Step 2: 提取所有 friend_id
-    const friendIds = friends.map((friend) => friend.friend_id);
+    // Step 2: 提取所有与当前用户相关的用户ID
+    const friendIds = friends.map((friend) =>
+      friend.user_id.toString() === userId ? friend.friend_id : friend.user_id,
+    );
 
     // Step 3: 查找 friend_id 对应的用户详细信息
     const users = await this.userModel
@@ -208,15 +247,19 @@ export class UserService {
     // Step 5: 组合好友记录和用户详细信息
     const result = friends
       .map((friend) => {
-        const user = userMap.get(friend.friend_id.toString());
+        const friendId = friend.user_id.toString() === userId ? friend.friend_id : friend.user_id;
+        const remark =
+          friend.user_id.toString() === userId ? friend.friendRemark : friend.userRemark;
+
+        const user = userMap.get(friendId.toString());
 
         if (user) {
           return {
             id: friend._id.toString(), // 将 ObjectId 转换为字符串
-            friendId: friend.friend_id.toString(), // 将 ObjectId 转换为字符串
+            friendId: friendId.toString(), // 将 ObjectId 转换为字符串
             friendEmail: user.email,
             friendUsername: user.username,
-            friendRemark: friend.friendRemark,
+            friendRemark: remark,
             createdAt: friend.createdAt,
             avatar: user.avatar,
           };
@@ -226,7 +269,7 @@ export class UserService {
       })
       .filter((friend) => friend !== null); // 过滤掉 null 项
 
-    return { data: result };
+    return { data: result as FriendDetailsDto[] };
   }
 
   // 通过好友验证

@@ -1,7 +1,9 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { Types } from 'mongoose';
+
+import { IsMinioUrl } from '@/core/decorate/minio-url.decorator';
 
 export class FindUserByEmailDto {
   @IsEmail({}, { message: '无效的邮箱地址' })
@@ -58,6 +60,11 @@ export class UserDto {
   _id: Types.ObjectId;
 }
 
+export class UserWithFriendStatusDto extends UserDto {
+  @ApiProperty({ description: '是否为好友' })
+  isFriend: boolean;
+}
+
 export class GitHubAccessToken {
   @ApiProperty({ description: '用户邮箱' })
   access_token: string;
@@ -88,9 +95,15 @@ export class UpdateUserDto {
   @IsNotEmpty()
   signature?: string;
 
-  @ApiProperty({ description: '背景图片链接，可选' })
+  @ApiProperty({ description: '头像URL，可选' })
   @IsOptional()
-  @IsString()
+  @IsMinioUrl()
+  @IsNotEmpty()
+  avatar?: string;
+
+  @ApiProperty({ description: '背景图片URL，可选' })
+  @IsOptional()
+  @IsMinioUrl()
   @IsNotEmpty()
   backgroundImage?: string;
 }
