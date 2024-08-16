@@ -20,7 +20,12 @@ import {
   FriendRequestDto,
   UpdateFriendRequestStatusDto,
 } from './dto/send-friend-request.dto';
-import { FindUserByEmailDto, UpdateUserDto, UserDto } from './dto/user.dto';
+import {
+  FindUserByEmailDto,
+  UpdateUserDto,
+  UserDto,
+  UserWithFriendStatusDto,
+} from './dto/user.dto';
 import { FriendDetailsDto } from './dto/friend';
 
 import { RequestWithUser } from '@/common/types';
@@ -35,14 +40,16 @@ export class UserController {
 
   @Get()
   @ApiOperation({ summary: '获取登录用户信息' })
-  @ApiResponseWithDto(UserDto, '获取登录用户信息', HttpStatus.OK)
+  @ApiResponseWithDto(UserWithFriendStatusDto, '获取登录用户信息', HttpStatus.OK)
   async getUserInfo(
     @Request() req: RequestWithUser,
     @Query('userId') userId?: string,
-  ): Promise<ResponseDto<UserDto>> {
-    const targetUserId = userId || req.user._id;
+  ): Promise<ResponseDto<UserWithFriendStatusDto>> {
+    const userInfo = await this.userService.getUserInfo(req.user._id, userId);
 
-    return await this.userService.getUserInfo(targetUserId);
+    return {
+      data: userInfo,
+    };
   }
 
   @Post('friend/request')
