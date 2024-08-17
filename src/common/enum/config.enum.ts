@@ -34,6 +34,7 @@ export enum MiNiOConfigEnum {
   MINIO_PORT = 'MINIO_PORT',
   MINIO_ACCESS_KEY = 'MINIO_ACCESS_KEY',
   MINIO_SECRET_KEY = 'MINIO_SECRET_KEY',
+  MINIO_BUCKET = 'MINIO_BUCKET',
 }
 
 export enum GitHubLoginConfigEnum {

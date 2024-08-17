@@ -19,11 +19,17 @@ async function bootstrap() {
 
   await registerFastifyPlugin(app, fastifyMultipart);
 
+  // app.enableCors({
+  //   origin: 'http://192.168.128.55:8081',
+  //   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+  //   credentials: true,
+  //   allowedHeaders: 'Content-Type, Accept, Authorization',
+  // });
+
   app.enableCors({
-    origin: 'http://localhost:8081',
+    origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
-    allowedHeaders: 'Content-Type, Accept, Authorization',
   });
 
   app.setGlobalPrefix('api/v1/');

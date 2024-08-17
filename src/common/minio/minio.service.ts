@@ -1,22 +1,54 @@
 import { Inject, Injectable } from '@nestjs/common';
 import * as Minio from 'minio';
 import { MulterFile } from '@webundsoehne/nest-fastify-file-upload';
+import { ConfigService } from '@nestjs/config';
+import { createHash } from 'crypto';
+import sharp from 'sharp'; // 导入 sharp
+import * as path from 'path';
+
+import { MiNiOConfigEnum } from '../enum/config.enum';
 
 @Injectable()
 export class MinioService {
-  constructor(@Inject('MINIO_CLIENT') private readonly minioClient: Minio.Client) {}
+  constructor(
+    @Inject('MINIO_CLIENT') private readonly minioClient: Minio.Client,
+    protected configService: ConfigService,
+  ) {}
 
   async getBuckets() {
     return await this.minioClient.listBuckets();
   }
 
   // 上传文件
-  async uploadFile(bucketName: string, fileName: string, file: MulterFile) {
-    await this.minioClient.putObject(bucketName, fileName, file.buffer);
+  async uploadFile(file: MulterFile) {
+    let buffer = file.buffer;
+    let fileExtension = this.getFileExtension(file.originalname);
+
+    // 检查文件类型，并转换为 WebP 格式
+    if (file.mimetype.startsWith('image/')) {
+      buffer = await sharp(buffer)
+        .webp({ quality: 80 }) // 转换为 WebP 格式
+        .toBuffer();
+      fileExtension = 'webp'; // 设置新的文件扩展名
+    }
+
+    const etag = this.generateEtag(buffer);
+    const fileName = `${etag}.${fileExtension}`; // 使用 etag 和后缀生成文件名
+
+    await this.minioClient.putObject(
+      this.configService.get(MiNiOConfigEnum.MINIO_BUCKET),
+      fileName,
+      buffer,
+    );
 
     const expiry = 24 * 60 * 60;
 
-    const presignedUrl = await this.minioClient.presignedUrl('GET', bucketName, fileName, expiry);
+    const presignedUrl = await this.minioClient.presignedUrl(
+      'GET',
+      this.configService.get(MiNiOConfigEnum.MINIO_BUCKET),
+      fileName, // 使用完整文件名
+      expiry,
+    );
 
     return {
       url: presignedUrl,
@@ -44,7 +76,7 @@ export class MinioService {
 
   // 获取文件列表
   async listObjects(bucketName: string) {
-    const stream = await this.minioClient.listObjectsV2(bucketName, '', true);
+    const stream = this.minioClient.listObjectsV2(bucketName, '', true);
     const objects = [];
 
     for await (const obj of stream) {
@@ -62,5 +94,16 @@ export class MinioService {
   // 删除文件
   async deleteFile(bucketName: string, fileName: string) {
     await this.minioClient.removeObject(bucketName, fileName);
+  }
+
+  private generateEtag(buffer: Buffer): string {
+    const hash = createHash('md5'); // 使用 MD5 哈希算法
+    hash.update(buffer);
+
+    return hash.digest('hex'); // 以十六进制字符串形式返回哈希值
+  }
+
+  private getFileExtension(filename: string): string {
+    return path.extname(filename).slice(1); // 提取文件后缀并去掉前面的点
   }
 }
