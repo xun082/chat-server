@@ -42,12 +42,8 @@ export class UploadController {
   @Post('single')
   @UseInterceptors(FileInterceptor('file'))
   @ApiFileUploadDecorate('上传单个文件', true) // 使用封装的装饰器
-  async uploadSingleFile(
-    @UploadedFile() file: MulterFile,
-    @Body() body: { bucketName: string; fileName: string },
-  ) {
-    const { bucketName, fileName } = body;
-    const result = await this.minioService.uploadFile(bucketName, fileName, file);
+  async uploadSingleFile(@UploadedFile() file: MulterFile) {
+    const result = await this.minioService.uploadFile(file);
 
     return { url: result.url };
   }
@@ -61,15 +57,11 @@ export class UploadController {
   @Post('multiple')
   @UseInterceptors(FilesInterceptor('files'))
   @ApiFileUploadDecorate('上传多个文件', false) // 使用封装的装饰器
-  async uploadMultipleFiles(
-    @UploadedFiles() files: MulterFile[],
-    @Body() body: { bucketName: string },
-  ) {
-    const { bucketName } = body;
+  async uploadMultipleFiles(@UploadedFiles() files: MulterFile[]) {
     const urls = [];
 
     for (const file of files) {
-      const result = await this.minioService.uploadFile(bucketName, file.originalname, file);
+      const result = await this.minioService.uploadFile(file);
       urls.push(result.url);
     }
 
