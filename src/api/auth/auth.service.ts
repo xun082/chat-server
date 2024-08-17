@@ -56,64 +56,73 @@ export class AuthService {
   async emailLogin(data: EmailLoginDto): Promise<ResponseDto<LoginResponseDto>> {
     const { email, captcha } = data;
 
+    // 1. 验证验证码是否有效
     const uniqueId = await this.redisService.get(email);
 
     if (uniqueId !== captcha) {
       throw new LoginException('验证码无效。');
     }
 
-    const password = generateDefaultPassword();
-    const userResult = await this.userModel
-      .findOne({ email: email })
+    // 2. 查找用户或创建新用户
+    let userResult: JwtPayload | null = await this.userModel
+      .findOne({ email })
       .select('_id email username')
       .lean()
       .exec();
 
-    console.log(userResult, 2222);
+    if (!userResult) {
+      userResult = await this.createNewUser(email, captcha);
+    } else {
+      userResult._id = userResult._id.toString(); // 如果 _id 是 ObjectId，转换为字符串
+    }
 
-    const user: JwtPayload =
-      {
-        _id: userResult?._id.toString(),
-        email: userResult?.email,
-        username: userResult?.username,
-      } ??
-      (await (async () => {
-        const newUser = await this.userService.createUserByEmail(
-          {
-            email,
-            code: captcha,
-            confirm_password: password,
-            password: password,
-          },
-          true,
-        );
-
-        return {
-          _id: newUser._id.toString(),
-          email: newUser.email,
-          username: newUser.username,
-        };
-      })());
-
-    if (!user || !user.email) {
+    // 3. 确保 userResult 和 email 存在
+    if (!userResult || !userResult.email) {
       throw new Error('用户创建或查找失败');
     }
 
-    // 2. 生成token时确保user.email存在
-    const accessToken = this.jwtService.sign({ sub: user._id.toString(), email: user.email });
-    const refreshToken = this.jwtService.sign(
-      { sub: user._id.toString(), email: user.email },
-      { expiresIn: '714d' },
-    );
+    // 4. 生成 Access Token 和 Refresh Token
+    const tokens = this.generateTokens(userResult._id as string, userResult.email);
 
+    // 5. 返回登录成功的响应
     return {
       data: {
-        access_token: accessToken,
-        refresh_token: refreshToken,
-        expiresIn: 7 * 24 * 60 * 60,
+        access_token: tokens.accessToken,
+        refresh_token: tokens.refreshToken,
+        expiresIn: 7 * 24 * 60 * 60, // 7 天的有效期
       },
       message: '登录成功',
     };
+  }
+
+  private async createNewUser(email: string, captcha: string) {
+    const password = generateDefaultPassword();
+    const newUser = await this.userService.createUserByEmail(
+      {
+        email,
+        code: captcha,
+        confirm_password: password,
+        password: password,
+      },
+      true,
+    );
+
+    return {
+      _id: newUser._id.toHexString(),
+      email: newUser.email,
+      username: newUser.username,
+    };
+  }
+
+  private generateTokens(userId: string, email: string) {
+    const accessToken = this.jwtService.sign({
+      sub: userId,
+      email: email,
+    });
+
+    const refreshToken = this.jwtService.sign({ sub: userId, email: email }, { expiresIn: '714d' });
+
+    return { accessToken, refreshToken };
   }
 
   jwtVerify(token: string) {
