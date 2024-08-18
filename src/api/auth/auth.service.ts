@@ -63,26 +63,23 @@ export class AuthService {
       throw new LoginException('验证码无效。');
     }
 
-    // 2. 查找用户或创建新用户
-    let userResult: JwtPayload | null = await this.userModel
-      .findOne({ email })
-      .select('_id email username')
-      .lean()
-      .exec();
+    // 2. 查找用户并在不存在时创建用户
+    const password = generateDefaultPassword();
+    const userResult = await this.userModel
+      .findOneAndUpdate(
+        { email }, // 查询条件
+        { $setOnInsert: { email, password, username: 'moment' } },
+        { new: true, upsert: true, select: '_id email username' },
+      )
+      .lean();
 
+    // 3. 确保 userResult 存在
     if (!userResult) {
-      userResult = await this.createNewUser(email, captcha);
-    } else {
-      userResult._id = userResult._id.toString(); // 如果 _id 是 ObjectId，转换为字符串
-    }
-
-    // 3. 确保 userResult 和 email 存在
-    if (!userResult || !userResult.email) {
       throw new Error('用户创建或查找失败');
     }
 
-    // 4. 生成 Access Token 和 Refresh Token
-    const tokens = this.generateTokens(userResult._id as string, userResult.email);
+    // 4. 生成 JWT token
+    const tokens = this.generateTokens(userResult._id.toString(), userResult.email);
 
     // 5. 返回登录成功的响应
     return {
@@ -95,32 +92,13 @@ export class AuthService {
     };
   }
 
-  private async createNewUser(email: string, captcha: string) {
-    const password = generateDefaultPassword();
-    const newUser = await this.userService.createUserByEmail(
-      {
-        email,
-        code: captcha,
-        confirm_password: password,
-        password: password,
-      },
-      true,
-    );
-
-    return {
-      _id: newUser._id.toHexString(),
-      email: newUser.email,
-      username: newUser.username,
-    };
-  }
-
   private generateTokens(userId: string, email: string) {
     const accessToken = this.jwtService.sign({
       sub: userId,
       email: email,
     });
 
-    const refreshToken = this.jwtService.sign({ sub: userId, email: email }, { expiresIn: '714d' });
+    const refreshToken = this.jwtService.sign({ sub: userId, email: email }, { expiresIn: '7d' });
 
     return { accessToken, refreshToken };
   }

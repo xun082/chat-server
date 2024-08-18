@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Model, Types } from 'mongoose';
+import { ObjectId } from 'mongodb';
 import { InjectModel } from '@nestjs/mongoose';
 import * as argon2 from 'argon2';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -28,7 +29,7 @@ import { ValidationException } from '@/core/exceptions/validation.exception';
 import { ResponseDto } from '@/common/dto/response.dto';
 import { SocketKeys } from '@/common/enum/socket';
 import { getCurrentTimestamp } from '@/utils';
-import { FriendRequestStatus } from '@/common/types';
+import { FriendRequestStatus, JwtPayload } from '@/common/types';
 
 @Injectable()
 export class UserService {
@@ -121,7 +122,7 @@ export class UserService {
 
     // 如果没有找到用户，创建新用户
     if (!existingUser) {
-      await this.createAndSaveUser(email, passwordEncryption, 'moment');
+      return await this.createAndSaveUser(email, passwordEncryption, 'moment');
     }
   }
 
@@ -134,7 +135,13 @@ export class UserService {
 
     await user.save();
 
-    return user;
+    user._id = new ObjectId(user._id);
+
+    return {
+      _id: new ObjectId(user._id),
+      username: user.username,
+      email: user.email,
+    };
   }
 
   // 发送好友申请

@@ -25,8 +25,6 @@ export class AuthController {
   async sendVerificationCode(
     @Body() sendVerificationCodeDto: SendVerificationCodeDto,
   ): Promise<ResponseDto<SendVerificationCodeResponseDto>> {
-    console.log(111);
-
     try {
       return await this.authService.sendVerificationCode(sendVerificationCodeDto);
     } catch (error) {
