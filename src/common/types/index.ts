@@ -1,5 +1,4 @@
 import { Request } from '@nestjs/common';
-import { Types } from 'mongoose';
 
 export interface ResponseModel<T> {
   code: number;
@@ -14,7 +13,7 @@ export interface SmsCodeType {
 }
 
 export interface JwtPayload {
-  _id: string | Types.ObjectId;
+  _id: string;
   username: string;
   email: string;
 }
