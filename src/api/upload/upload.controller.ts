@@ -51,19 +51,16 @@ export class UploadController {
   /**
    * 多文件上传
    * @param files 要上传的文件数组
-   * @param body 包含桶名称
    * @returns 上传成功后的文件URL数组
    */
   @Post('multiple')
   @UseInterceptors(FilesInterceptor('files'))
   @ApiFileUploadDecorate('上传多个文件', false) // 使用封装的装饰器
   async uploadMultipleFiles(@UploadedFiles() files: MulterFile[]) {
-    const urls = [];
+    const results = await this.minioService.uploadFiles(files);
 
-    for (const file of files) {
-      const result = await this.minioService.uploadFile(file);
-      urls.push(result.url);
-    }
+    // 提取每个文件的 URL
+    const urls = results.map((result) => result.url);
 
     return { urls };
   }

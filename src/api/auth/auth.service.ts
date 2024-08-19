@@ -17,7 +17,6 @@ import { EmailService } from '@/common/email/email.service';
 import { ResponseDto } from '@/common/dto/response.dto';
 import { LoginException } from '@/core/exceptions/login.exception';
 import { generateDefaultPassword, generateVerificationCode } from '@/utils';
-import { JwtPayload } from '@/common/types';
 
 @Injectable()
 export class AuthService {
