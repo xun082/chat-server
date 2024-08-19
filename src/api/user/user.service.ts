@@ -226,7 +226,7 @@ export class UserService {
     return { data: result };
   }
 
-  async getFriendsList(userId: string): Promise<ResponseDto<FriendDetailsDto[]>> {
+  async getFriendsList(userId: string): Promise<FriendDetailsDto[]> {
     // Step 1: 获取好友关系数据，包括 user_id 或 friend_id 为当前用户的关系
     const friends = await this.friendModel
       .find({
@@ -276,7 +276,7 @@ export class UserService {
       })
       .filter((friend) => friend !== null); // 过滤掉 null 项
 
-    return { data: result as FriendDetailsDto[] };
+    return result as FriendDetailsDto[];
   }
 
   // 通过好友验证
@@ -297,14 +297,7 @@ export class UserService {
       throw new ValidationException('Friend request is not pending');
     }
 
-    const friend = new this.friendModel({
-      user_id: requestId,
-      friend_id: friendRequest.receiverId,
-      userRemark: friendRequest.remark,
-      friendRemark: updateFriendRequestDto.remark,
-    });
-
-    await friend.save();
+    // await friend.save();
 
     this.eventEmitter.emit(
       SocketKeys.FRIEND_REQUEST_UPDATED,

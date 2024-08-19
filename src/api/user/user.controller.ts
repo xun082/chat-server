@@ -76,8 +76,10 @@ export class UserController {
   async getFriendsList(@Request() req: RequestWithUser): Promise<ResponseDto<FriendDetailsDto[]>> {
     const data = await this.userService.getFriendsList(req.user._id);
 
+    const result = data.length > 0 ? data : [];
+
     return {
-      data: data.data.length > 0 ? data.data : null,
+      data: result,
     };
   }
 
