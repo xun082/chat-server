@@ -45,7 +45,7 @@ export class UploadController {
   async uploadSingleFile(@UploadedFile() file: MulterFile) {
     const result = await this.minioService.uploadFile(file);
 
-    return { url: result.url };
+    return { url: result };
   }
 
   /**
