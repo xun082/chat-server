@@ -13,6 +13,7 @@ import { UserModule } from './api/user/user.module';
 import { AuthModule } from './api/auth/auth.module';
 import { SocketModule } from './api/socket/socket.module';
 import { UploadModule } from './api/upload/upload.module';
+import { PostModule } from './api/post/post.module';
 
 import loadDatabaseConfig from '@/config/mongo.config';
 
@@ -35,6 +36,7 @@ const NODE_ENV = process.env.NODE_ENV ? 'production' : 'development';
     AuthModule,
     SocketModule,
     UploadModule,
+    PostModule,
   ],
   controllers: [],
   providers: [
