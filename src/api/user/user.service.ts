@@ -29,7 +29,7 @@ import { ValidationException } from '@/core/exceptions/validation.exception';
 import { ResponseDto } from '@/common/dto/response.dto';
 import { SocketKeys } from '@/common/enum/socket';
 import { getCurrentTimestamp } from '@/utils';
-import { FriendRequestStatus, JwtPayload } from '@/common/types';
+import { FriendRequestStatus } from '@/common/types';
 
 @Injectable()
 export class UserService {

@@ -41,8 +41,30 @@ services:
       timeout: 20s
       retries: 3
 
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - '9090:9090'
+    restart: always
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - '3006:3000'
+    volumes:
+      - grafana-data:/var/lib/grafana
+    restart: always
+
 volumes:
   mongodata:
   config:
   redis-data:
   data:
+  grafana-data:

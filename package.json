@@ -40,6 +40,7 @@
     "@nestjs/platform-socket.io": "^10.3.10",
     "@nestjs/schedule": "^4.1.0",
     "@nestjs/swagger": "^7.4.0",
+    "@nestjs/terminus": "^10.2.3",
     "@nestjs/websockets": "^10.3.10",
     "@supercharge/request-ip": "^1.2.0",
     "@webundsoehne/nest-fastify-file-upload": "^2.2.0",

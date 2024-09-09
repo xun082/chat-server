@@ -61,9 +61,7 @@ export class ConnectionService {
     }
   }
 
-  async handleDisconnect(client: Socket): Promise<void> {
-    console.log(client);
-  }
+  async handleDisconnect(client: Socket): Promise<void> {}
 
   private disconnect(socket: Socket, error: HttpException) {
     socket.emit('error', error);

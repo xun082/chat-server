@@ -40,30 +40,40 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private clients: Map<string, Socket> = new Map();
 
   // 心跳检测配置
-  private readonly HEARTBEAT_INTERVAL = 10000; // 心跳间隔时间（毫秒）
-  private readonly HEARTBEAT_TIMEOUT = 30000; // 心跳超时时间（毫秒）
+  private readonly HEARTBEAT_INTERVAL = 30000; // 心跳间隔时间（毫秒）
+  private readonly HEARTBEAT_TIMEOUT = 60000; // 心跳超时时间（毫秒）
+  private heartbeatIntervalId: NodeJS.Timeout | null = null;
 
   constructor(
     private readonly chatService: ChatService,
     private readonly connectionService: ConnectionService,
     private readonly offlineNotificationService: OfflineNotificationService,
-  ) {
-    // 定期检查心跳状态
-    setInterval(() => {
-      this.checkHeartbeat();
-    }, this.HEARTBEAT_INTERVAL);
-  }
+  ) {}
 
   async handleConnection(client: Socket) {
-    await this.connectionService.handleConnection(client);
-    // 初始化客户端的心跳数据
-    client.data.lastHeartbeat = Date.now();
-    this.clients.set(client.id, client);
+    try {
+      await this.connectionService.handleConnection(client);
+      // 初始化客户端的心跳数据
+      client.data.lastHeartbeat = Date.now();
+      this.clients.set(client.id, client);
+
+      if (!this.heartbeatIntervalId) {
+        this.startHeartbeatCheck();
+      }
+    } catch (error) {
+      console.error('Connection error:', error);
+      client.disconnect();
+    }
   }
 
   async handleDisconnect(client: Socket): Promise<void> {
     this.clients.delete(client.id);
     await this.connectionService.handleDisconnect(client);
+
+    if (this.clients.size === 0 && this.heartbeatIntervalId) {
+      clearInterval(this.heartbeatIntervalId);
+      this.heartbeatIntervalId = null;
+    }
   }
 
   @SubscribeMessage(SocketKeys.SINGLE_CHAT)
@@ -107,6 +117,13 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     socket.data.lastHeartbeat = Date.now();
   }
 
+  // 启动心跳检测
+  private startHeartbeatCheck() {
+    this.heartbeatIntervalId = setInterval(() => {
+      this.checkHeartbeat();
+    }, this.HEARTBEAT_INTERVAL);
+  }
+
   // 检查心跳状态
   private checkHeartbeat() {
     const now = Date.now();
@@ -114,6 +131,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.clients.forEach((socket, clientId) => {
       if (now - socket.data.lastHeartbeat > this.HEARTBEAT_TIMEOUT) {
         // 如果超时没有收到心跳，断开连接
+        console.log(`Client ${clientId} disconnected due to heartbeat timeout.`);
         socket.disconnect(true);
         this.clients.delete(clientId);
       }

@@ -137,8 +137,6 @@ export class ChatService {
         NotificationType.FRIEND_REQUEST_UPDATED,
       );
     }
-
-    console.log(1111111);
   }
 
   /**
